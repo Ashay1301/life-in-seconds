@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Life in Seconds</title>
+  <style>
+    :root {
+      --accent: #007aff;
+      --text: #1c1c1e;
+      --subtext: #6e6e73;
+      --glass-bg: rgba(255, 255, 255, 0.5);
+    }
+
+    * {
+      box-sizing: border-box;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    }
+
+    body, html {
+      margin: 0;
+      padding: 0;
+      height: 100%;
+      background: linear-gradient(145deg, #f2f2f7, #e5e5ea);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .container {
+      position: relative;
+      background: var(--glass-bg);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border-radius: 28px;
+      padding: 48px;
+      width: 90%;
+      max-width: 500px;
+      text-align: center;
+      box-shadow: 0 30px 60px rgba(0, 0, 0, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.3);
+    }
+
+    h1 {
+      font-size: 1.8rem;
+      color: var(--text);
+      margin-bottom: 12px;
+    }
+
+    .subtext {
+      font-size: 1rem;
+      color: var(--subtext);
+      margin-bottom: 30px;
+    }
+
+    #countdown {
+      font-size: 2rem;
+      font-weight: 600;
+      color: var(--accent);
+      transition: transform 0.2s ease;
+    }
+
+    .pulse {
+      animation: pulse 1s ease-in-out;
+    }
+
+    @keyframes pulse {
+      0% { transform: scale(1); }
+      50% { transform: scale(1.03); }
+      100% { transform: scale(1); }
+    }
+
+    input[type="date"] {
+      padding: 12px 16px;
+      font-size: 1rem;
+      border-radius: 12px;
+      border: 1px solid rgba(200, 200, 200, 0.7);
+      background-color: rgba(255, 255, 255, 0.7);
+      color: var(--text);
+      outline: none;
+      transition: border 0.3s ease;
+    }
+
+    input[type="date"]:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(0, 122, 255, 0.2);
+    }
+
+    #resetBtn {
+      position: absolute;
+      top: 16px;
+      right: 16px;
+      background: transparent;
+      border: none;
+      color: var(--accent);
+      font-size: 0.9rem;
+      cursor: pointer;
+      display: none;
+    }
+
+    .ring-wrapper {
+      position: relative;
+      width: 200px;
+      height: 200px;
+      margin: 30px auto;
+    }
+
+    svg {
+      transform: rotate(-90deg);
+    }
+
+    .center-text {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      font-size: 1.2rem;
+      font-weight: 500;
+      color: var(--text);
+    }
+
+    @media (max-width: 480px) {
+      .container {
+        padding: 32px 24px;
+      }
+
+      #countdown {
+        font-size: 1.6rem;
+      }
+
+      .center-text {
+        font-size: 1rem;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <button id="resetBtn">Reset</button>
+    <h1>Your Time is Valuable</h1>
+   <!-- <div class="subtext">See how many seconds are left until you turn 85</div> -->
+    <input type="date" id="birthdate" />
+    <div class="ring-wrapper" style="display:none">
+      <svg width="200" height="200">
+        <circle cx="100" cy="100" r="90" stroke="#e5e5ea" stroke-width="15" fill="none" />
+        <circle id="progressRing" cx="100" cy="100" r="90" stroke="#007aff" stroke-width="15" fill="none" stroke-linecap="round" stroke-dasharray="565.48" stroke-dashoffset="0"/>
+      </svg>
+      <div class="center-text" id="percentDisplay">0%</div>
+    </div>
+    <div id="countdown"></div>
+  </div>
+
+  <script>
+    const birthInput = document.getElementById('birthdate');
+    const countdownEl = document.getElementById('countdown');
+    const resetBtn = document.getElementById('resetBtn');
+    const ringWrapper = document.querySelector('.ring-wrapper');
+    const progressRing = document.getElementById('progressRing');
+    const percentDisplay = document.getElementById('percentDisplay');
+    const RADIUS = 90;
+    const CIRCUMFERENCE = 2 * Math.PI * RADIUS;
+
+    progressRing.style.strokeDasharray = `${CIRCUMFERENCE}`;
+
+    let interval = null;
+
+    function setProgress(percent) {
+      const offset = CIRCUMFERENCE - (percent / 100) * CIRCUMFERENCE;
+      progressRing.style.strokeDashoffset = offset;
+      percentDisplay.textContent = `${percent.toFixed(1)}%`;
+    }
+
+    birthInput.addEventListener('change', () => {
+      const birthDate = new Date(birthInput.value);
+      if (isNaN(birthDate)) {
+        countdownEl.textContent = "Enter a valid date.";
+        return;
+      }
+
+      const deathDate = new Date(birthDate);
+      deathDate.setFullYear(deathDate.getFullYear() + 85);
+      ringWrapper.style.display = "block";
+      resetBtn.style.display = "inline";
+      birthInput.style.display = "none";
+
+      function update() {
+        const now = new Date();
+        const totalSeconds = Math.floor((deathDate - birthDate) / 1000);
+        const secondsLeft = Math.max(0, Math.floor((deathDate - now) / 1000));
+        const secondsLived = totalSeconds - secondsLeft;
+        const percent = Math.min(100, (secondsLived / totalSeconds) * 100);
+
+        setProgress(percent);
+
+        if (secondsLeft > 0) {
+          countdownEl.innerHTML = `
+            ${secondsLeft.toLocaleString()}<br>
+            <span style="font-size: 0.9rem; color: #6e6e73;">seconds remaining</span>
+          `;
+        } else {
+          countdownEl.innerHTML = "🎉 You've passed 85 — time is a bonus.";
+          clearInterval(interval);
+        }
+
+        countdownEl.classList.remove('pulse');
+        void countdownEl.offsetWidth; // trigger reflow
+        countdownEl.classList.add('pulse');
+      }
+
+      update();
+      clearInterval(interval);
+      interval = setInterval(update, 1000);
+    });
+
+    resetBtn.addEventListener('click', () => {
+      clearInterval(interval);
+      birthInput.value = '';
+      birthInput.style.display = "inline";
+      countdownEl.textContent = "Pick your birthdate to begin";
+      ringWrapper.style.display = "none";
+      resetBtn.style.display = "none";
+      percentDisplay.textContent = "";
+    });
+  </script>
+</body>
+</html>
